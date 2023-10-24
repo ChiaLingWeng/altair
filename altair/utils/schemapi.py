@@ -259,7 +259,8 @@ def _get_referencing_registry(
     if json_schema_draft_url is None:
         json_schema_draft_url = _get_json_schema_draft_url(rootschema)
 
-    specification = referencing.jsonschema.specification_with(json_schema_draft_url)
+    specification = referencing.jsonschema.specification_with(
+        json_schema_draft_url)
     resource = specification.create_resource(rootschema)
     return referencing.Registry().with_resource(
         uri=_VEGA_LITE_ROOT_URI, resource=resource
@@ -462,7 +463,8 @@ def _subclasses(cls: type) -> Generator[type, None, None]:
     current_set = {cls}
     while current_set:
         seen |= current_set
-        current_set = set.union(*(set(cls.__subclasses__()) for cls in current_set))
+        current_set = set.union(*(set(cls.__subclasses__())
+                                for cls in current_set))
         for cls in current_set - seen:
             yield cls
 
@@ -516,7 +518,8 @@ class SchemaValidationError(jsonschema.ValidationError):
         super().__init__(**err._contents())
         self.obj = obj
         self._errors: GroupedValidationErrors = getattr(
-            err, "_all_errors", {getattr(err, "json_path", _json_path(err)): [err]}
+            err, "_all_errors", {
+                getattr(err, "json_path", _json_path(err)): [err]}
         )
         # This is the message from err
         self._original_message = self.message
@@ -640,9 +643,11 @@ See the help for `{altair_cls.__name__}` to read the full description of these p
         column_max_widths: List[int] = []
         last_end_idx: int = 0
         for ch in column_heights:
-            param_names_columns.append(param_names[last_end_idx : last_end_idx + ch])
+            param_names_columns.append(
+                param_names[last_end_idx: last_end_idx + ch])
             column_max_widths.append(
-                max([len(param_name) for param_name in param_names_columns[-1]])
+                max([len(param_name)
+                    for param_name in param_names_columns[-1]])
             )
             last_end_idx = ch + last_end_idx
 
@@ -676,7 +681,8 @@ See the help for `{altair_cls.__name__}` to read the full description of these p
                 bullet_points.append(f"one of {error.validator_value}")
 
         if "type" in errors_by_validator:
-            types = [f"'{err.validator_value}'" for err in errors_by_validator["type"]]
+            types = [
+                f"'{err.validator_value}'" for err in errors_by_validator["type"]]
             point = "of type "
             if len(types) == 1:
                 point += types[0]
@@ -704,7 +710,8 @@ See the help for `{altair_cls.__name__}` to read the full description of these p
         else:
             # We don't use .capitalize below to make the first letter uppercase
             # as that makes the rest of the message lowercase
-            bullet_points = [point[0].upper() + point[1:] for point in bullet_points]
+            bullet_points = [point[0].upper() + point[1:]
+                             for point in bullet_points]
             message += ". Valid values are:\n\n"
             message += "\n".join([f"- {point}" for point in bullet_points])
             message += "\n\n"
@@ -946,7 +953,8 @@ class SchemaBase:
             # when a non-ordinal data type is specifed manually
             # or if the encoding channel does not support sorting
             if "sort" in parsed_shorthand and (
-                "sort" not in kwds or kwds["type"] not in ["ordinal", Undefined]
+                "sort" not in kwds or kwds["type"] not in [
+                    "ordinal", Undefined]
             ):
                 parsed_shorthand.pop("sort")
 
@@ -957,8 +965,11 @@ class SchemaBase:
                     if kwds.get(k, Undefined) is Undefined
                 }
             )
+
             kwds = {
-                k: v for k, v in kwds.items() if k not in list(ignore) + ["shorthand"]
+                k: v.to_list() if (isinstance(v, (pd.Series, pd.Index))) else v
+                for k, v in kwds.items() 
+                if k not in list(ignore) + ["shorthand"]
             }
             if "mark" in kwds and isinstance(kwds["mark"], str):
                 kwds["mark"] = {"type": kwds["mark"]}
@@ -1138,7 +1149,8 @@ class SchemaBase:
         rootschema
         """
         value = _todict(value, context={})
-        props = cls.resolve_references(schema or cls._schema).get("properties", {})
+        props = cls.resolve_references(
+            schema or cls._schema).get("properties", {})
         return validate_jsonschema(
             value, props.get(name, {}), rootschema=cls._rootschema or cls._schema
         )
@@ -1159,7 +1171,8 @@ class _FromDict:
     specified in the ``class_list`` argument to the constructor.
     """
 
-    _hash_exclude_keys = ("definitions", "title", "description", "$schema", "id")
+    _hash_exclude_keys = ("definitions", "title",
+                          "description", "$schema", "id")
 
     def __init__(self, class_list: Iterable[Type[SchemaBase]]) -> None:
         # Create a mapping of a schema hash to a list of matching classes
@@ -1217,7 +1230,8 @@ class _FromDict:
     ) -> Any:
         """Construct an object from a dict representation"""
         if (schema is None) == (cls is None):
-            raise ValueError("Must provide either cls or schema, but not both.")
+            raise ValueError(
+                "Must provide either cls or schema, but not both.")
         if schema is None:
             # Can ignore type errors as  cls is not None in case schema is
             schema = cls._schema  # type: ignore[union-attr]
@@ -1249,7 +1263,8 @@ class _FromDict:
             schemas = schema.get("anyOf", []) + schema.get("oneOf", [])
             for possible_schema in schemas:
                 try:
-                    validate_jsonschema(dct, possible_schema, rootschema=rootschema)
+                    validate_jsonschema(
+                        dct, possible_schema, rootschema=rootschema)
                 except jsonschema.ValidationError:
                     continue
                 else:
@@ -1266,7 +1281,8 @@ class _FromDict:
             kwds = {}
             for key, val in dct.items():
                 if key in props:
-                    val = self.from_dict(val, schema=props[key], rootschema=rootschema)
+                    val = self.from_dict(
+                        val, schema=props[key], rootschema=rootschema)
                 kwds[key] = val
             return cls(**kwds)
 
@@ -1310,7 +1326,8 @@ class _PropertySetter:
             # For short docstrings such as Aggregate, Stack, et
             else:
                 self.__doc__ = (
-                    altair_prop.__doc__.replace("    ", "") + "\n" + self.__doc__
+                    altair_prop.__doc__.replace(
+                        "    ", "") + "\n" + self.__doc__
                 )
             # Add signatures and tab completion for the method and parameter names
             self.__signature__ = inspect.signature(altair_prop)
